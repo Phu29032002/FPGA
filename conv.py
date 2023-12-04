@@ -45,6 +45,26 @@ class Relu:
                     self.result[row, col] = 0
         return self.result
 
+class MaxPooling:
+    def __init__(self, input, kernelsize):
+        self.input = input
+        self.kernelsize = kernelsize
+        self.height, self.width = input.shape
+        self.result = np.zeros((self.height - kernelsize + 1, self.width - kernelsize + 1))
+
+    def getRoi(self, input):
+        for row in range(self.height - self.kernelsize + 1):
+            for col in range(self.width - self.kernelsize + 1):
+                roi = input[row:row + self.kernelsize, col:col + self.kernelsize]
+                yield roi, row, col
+
+    def operate(self):
+        for roi, row, col in self.getRoi(self.input):
+            self.result[row, col] = np.max(roi)
+        return self.result
+
+
+
 #pattern
 img_pattern = cv2.imread("pattern.jpg")
 #img = cv2.resize(img, (200, 200))
@@ -68,7 +88,6 @@ conv2d_input = Conv2d(img_gray_input, laplacian,3)
 img_gray_conv2d_input = conv2d_input.operate()
 conv2d_relu_input = Relu(img_gray_conv2d_input)
 conv2d_relu_img_input = conv2d_relu_input.operate()
-
 print(conv2d_relu_img_input.shape)
 
 #convol pattern and input
@@ -76,8 +95,11 @@ conv2d_stage2 = Conv2d(conv2d_relu_img_input,  conv2d_relu_img_pattern,26)
 img_gray_conv2d_stage2 = conv2d_stage2.operate()
 conv2d_relu_stage2 = Relu(img_gray_conv2d_stage2)
 conv2d_relu_img_stage2 = conv2d_relu_stage2.operate()
-
 print(conv2d_relu_img_stage2.shape)
+
+#max pooling conv2d_relu_img_stage2
+maxpooling_stage2 = MaxPooling(conv2d_relu_img_stage2, 2)
+maxpooling_img_gray_stage2 = maxpooling_stage2.operate()
 
 # Plotting side by side
 plt.subplot(1, 2, 1)
@@ -102,6 +124,12 @@ plt.show()
 
 plt.imshow(conv2d_relu_img_stage2, cmap='gray')
 plt.title('stage 2')
+
+plt.show()
+
+
+plt.imshow(maxpooling_img_gray_stage2, cmap='gray')
+plt.title('Max pooling')
 
 plt.show()
 #plt.imshow(conv2d_relu_img_pattern, cmap='gray')
